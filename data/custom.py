@@ -1,6 +1,5 @@
 from .config import HOME
 import os
-import os.path as osp
 import sys
 import torch
 import torch.utils.data as data
@@ -12,7 +11,7 @@ import json
 import glob
 import skimage
 
-CUSTOM_ROOT = osp.join(HOME, 'data', 'image_data')
+CUSTOM_ROOT = os.path.join(HOME, 'data', 'image_data')
 print(HOME)
 # Classes do not explicitley have BG here
 CUSTOM_CLASSES = ('object')
@@ -21,11 +20,21 @@ def get_targets(label_file):
     """
     Processes the VGG Image Annotator json output into a list of dicts.
 
-    Json annotation file snippet:
-    {'480835.jpg1406946': {'regions': {}, 'filename': '480835.jpg', 'fileref': '', 'size': 1406946, 'file_attributes': {}, 'base64_img_data': ''}, 
-    '480980.jpg2644207': {'regions': {'0': {'region_attributes': {}, 'shape_attributes': 
-    {'y': 547, 'x': 2176, 'height': 249, 'name': 'rect', 'width': 178}}}, 'filename': 
-    '480980.jpg', 'fileref': '', 'size': 2644207, 'file_attributes': {}, 'base64_img_data': ''},...
+    Args:
+        label_file : file (json)
+            Json annotation file snippet:
+            {'480835.jpg1406946': {'regions': {}, 'filename': '480835.jpg', 'fileref': '', 
+            'size': 1406946, 'file_attributes': {}, 'base64_img_data': ''}, 
+            '480980.jpg2644207': {'regions': {'0': {'region_attributes': {}, 'shape_attributes': 
+            {'y': 547, 'x': 2176, 'height': 249, 'name': 'rect', 'width': 178}}}, 'filename': 
+            '480980.jpg', 'fileref': '', 'size': 2644207, 'file_attributes': {}, 'base64_img_data': ''},...
+
+    For id we will use is the filename
+    regions contains the shape attributes (might be many regions/many bounding boxes for an image)
+    shape_attributes have the bounding boxes in this json
+
+    Returns:
+        dict with the bounding box(es) for an id (the filename in this instance)
     """
     targets = {}
     # Shape regions json (exported from VGG Image Annotator)
@@ -54,9 +63,9 @@ class CustomAnnotationTransform(object):
     """
     def __init__(self, train=True):
         if train == True:
-            self.targets = get_targets(osp.join(CUSTOM_ROOT, 'train', 'annot', 'via_region_data.json'))
+            self.targets = get_targets(os.path.join(CUSTOM_ROOT, 'train', 'annot', 'via_region_data.json'))
         else:
-            self.targets = get_targets(osp.join(CUSTOM_ROOT, 'test', 'annot', 'via_region_data.json'))
+            self.targets = get_targets(os.path.join(CUSTOM_ROOT, 'test', 'annot', 'via_region_data.json'))
         self.ids = list(self.targets.keys())
 
     def __call__(self, target, width, height):
@@ -71,14 +80,15 @@ class CustomAnnotationTransform(object):
         scale = np.array([width, height, width, height])
         res = []
         custom_class = 0 # int for not background (BG)
-        # data_list = self.targets[target]
         for _, elem in enumerate(target):
             bbox = np.zeros(shape=4)
             bbox[0] = elem['x']
             bbox[1] = elem['y']
             bbox[2] = bbox[0] + elem['width']
             bbox[3] = bbox[1] + elem['height']
-            final_box = list(np.array(bbox)/scale)
+            # TODO understand purpose of scale
+            # final_box = list(np.array(bbox)/scale)
+            final_box = list(np.array(bbox))
             final_box.append(custom_class)
             res += [final_box]  # [xmin, ymin, xmax, ymax, label_idx]
         return res  # [[xmin, ymin, xmax, ymax, label_idx], ... ]
@@ -130,10 +140,10 @@ class CustomDetection(data.Dataset):
         img_id = self.ids[index]
         target = self.targets[img_id]
 
-        path = osp.join(self.root, img_id)
-        assert osp.exists(path), 'Image path does not exist: {}'.format(path)
+        path = os.path.join(self.root, img_id)
+        assert os.path.exists(path), 'Image path does not exist: {}'.format(path)
 
-        img = cv2.imread(osp.join(self.root, path))
+        img = cv2.imread(os.path.join(self.root, path))
         height, width, _ = img.shape
         if self.target_transform is not None:
             target = self.target_transform(target, width, height)
@@ -160,10 +170,10 @@ class CustomDetection(data.Dataset):
         '''
         img_id = self.ids[index]
 
-        path = osp.join(self.root, img_id)
-        assert osp.exists(path), 'Image path does not exist: {}'.format(path)
+        path = os.path.join(self.root, img_id)
+        assert os.path.exists(path), 'Image path does not exist: {}'.format(path)
 
-        return cv2.imread(osp.join(self.root, path), cv2.IMREAD_COLOR)
+        return cv2.imread(os.path.join(self.root, path), cv2.IMREAD_COLOR)
 
     def pull_anno(self, index):
         '''Returns the original annotation of image at index
@@ -181,10 +191,10 @@ class CustomDetection(data.Dataset):
         img_id = self.ids[index]
         target = self.targets[img_id]
 
-        path = osp.join(self.root, img_id)
-        assert osp.exists(path), 'Image path does not exist: {}'.format(path)
+        path = os.path.join(self.root, img_id)
+        assert os.path.exists(path), 'Image path does not exist: {}'.format(path)
 
-        img = cv2.imread(osp.join(self.root, path))
+        img = cv2.imread(os.path.join(self.root, path))
         height, width, _ = img.shape
         if self.target_transform is not None:
             target = self.target_transform(target, width, height)

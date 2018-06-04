@@ -48,7 +48,7 @@ coco = {
 custom = {
     'num_classes': 2, # include BG in this count
     'lr_steps': (280000, 360000, 400000),
-    'max_iter': 47, # num_images / batch_size
+    'max_iter': 52, # num_images / batch_size
     'feature_maps': [38, 19, 10, 5, 3, 1],
     'min_dim': 300,
     'steps': [8, 16, 32, 64, 100, 300],

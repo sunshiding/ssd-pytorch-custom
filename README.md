@@ -22,6 +22,8 @@ In the works:
   * [ ] `eval.py`
   * [ ] `demo` code
 
+For custom, make sure to update the number of iterations in the `config.py` (`max_iter`) (if minibatch size is 1, `max_iter` equals the number of input images in the training set).
+
 Here is the original project's excellent Readme as of 2018-03-30 (for Installation, Models, etc.):
 
 # SSD: Single Shot MultiBox Object Detector, in PyTorch
